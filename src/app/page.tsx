@@ -21,7 +21,7 @@ const FlightMap = dynamic(() => import('@/components/map/FlightMap'), {
 export default function Home() {
   const [selectedAircraft, setSelectedAircraft] = useState<Aircraft | null>(null);
   const { aircraft, loading, error, lastUpdated, refresh } = useFlightData({
-    refreshInterval: 30000,
+    refreshInterval: 15000, // Refresh every 15 seconds for more visible movement
     autoRefresh: true,
   });
 
@@ -61,9 +61,9 @@ export default function Home() {
               error ? 'bg-red-400' : 'bg-green-400'
             }`}></div>
             <span className="text-foreground/70">
-              {loading ? 'Updating...' : 
-               error ? 'Connection error' : 
-               `${aircraft.filter(a => !a.on_ground && a.latitude !== null).length} aircraft tracked`}
+              {loading ? 'Fetching live data...' : 
+               error ? 'API error - using fallback data' : 
+               `${aircraft.filter(a => !a.on_ground && a.latitude !== null).length} live aircraft • Updates every 15s`}
             </span>
           </div>
         </div>

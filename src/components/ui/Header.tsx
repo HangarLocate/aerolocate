@@ -49,9 +49,11 @@ export default function Header({ onRefresh, isLoading, lastUpdated }: HeaderProp
           {/* Status and Controls */}
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-xs text-foreground/60">Last updated</div>
+              <div className="text-xs text-foreground/60">
+                {isLoading ? 'Updating...' : 'Last updated'}
+              </div>
               <div className="text-xs font-medium text-foreground">
-                {formatLastUpdated(lastUpdated)}
+                {isLoading ? 'Fetching live data' : formatLastUpdated(lastUpdated)}
               </div>
             </div>
             

@@ -27,17 +27,13 @@ export function useFlightData({
     setError(null);
 
     try {
-      // Temporarily use mock data for testing
-      const { getMockAircraft } = await import('@/lib/mockData');
-      const data = getMockAircraft();
-      
-      // Uncomment this for real API data:
-      // let data: Aircraft[];
-      // if (bounds) {
-      //   data = await openSky.getStatesInBounds(bounds);
-      // } else {
-      //   data = await openSky.getAllStates();
-      // }
+      // Use real OpenSky API data for live aircraft movement
+      let data: Aircraft[];
+      if (bounds) {
+        data = await openSky.getStatesInBounds(bounds);
+      } else {
+        data = await openSky.getAllStates();
+      }
 
       setAircraft(data);
       setLastUpdated(new Date());
@@ -45,10 +41,20 @@ export function useFlightData({
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch flight data';
       setError(errorMessage);
       console.error('Flight data fetch error:', err);
+      
+      // Fallback to mock data if API fails
+      try {
+        const { getMockAircraft } = await import('@/lib/mockData');
+        const mockData = getMockAircraft();
+        setAircraft(mockData);
+        setLastUpdated(new Date());
+      } catch (mockError) {
+        console.error('Failed to load mock data:', mockError);
+      }
     } finally {
       setLoading(false);
     }
-  }, [bounds]); // removed openSky from dependencies as it's a singleton
+  }, [bounds, openSky]);
 
   // Initial fetch
   useEffect(() => {

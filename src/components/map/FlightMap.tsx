@@ -1,21 +1,28 @@
 'use client';
 
 import { useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import { Icon, LatLngTuple } from 'leaflet';
 import { Aircraft } from '@/types';
+import AnimatedMarker from './AnimatedMarker';
 
-// Custom aircraft icon
-const aircraftIcon = new Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#0969da" stroke="#ffffff" stroke-width="1"/>
-    </svg>
-  `),
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12],
-});
+// Create rotated aircraft icon based on heading
+const createAircraftIcon = (heading?: number | null) => {
+  const rotation = heading ? heading - 90 : 0; // Adjust for icon orientation
+  
+  return new Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(${rotation} 12 12)">
+          <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#0969da" stroke="#ffffff" stroke-width="1"/>
+        </g>
+      </svg>
+    `),
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
+};
 
 interface FlightMapProps {
   aircraft: Aircraft[];
@@ -38,16 +45,6 @@ export default function FlightMap({
     [aircraft]
   );
 
-  const formatAltitude = (altitude: number | null) => {
-    if (altitude === null) return 'Unknown';
-    return Math.round(altitude * 3.28084).toLocaleString() + ' ft';
-  };
-
-  const formatSpeed = (velocity: number | null) => {
-    if (velocity === null) return 'Unknown';
-    return Math.round(velocity * 1.94384) + ' knots';
-  };
-
   return (
     <div className="h-full w-full">
       <MapContainer
@@ -62,29 +59,12 @@ export default function FlightMap({
         />
         
         {validAircraft.map((plane) => (
-          <Marker
+          <AnimatedMarker
             key={plane.icao24}
-            position={[plane.latitude!, plane.longitude!]}
-            icon={aircraftIcon}
-            eventHandlers={{
-              click: () => onAircraftSelect?.(plane)
-            }}
-          >
-            <Popup>
-              <div className="p-2 min-w-[200px]">
-                <div className="font-semibold text-sm mb-2">
-                  {plane.callsign?.trim() || 'Unknown Flight'}
-                </div>
-                <div className="space-y-1 text-xs">
-                  <div><span className="font-medium">ICAO:</span> {plane.icao24.toUpperCase()}</div>
-                  <div><span className="font-medium">Country:</span> {plane.origin_country}</div>
-                  <div><span className="font-medium">Altitude:</span> {formatAltitude(plane.baro_altitude)}</div>
-                  <div><span className="font-medium">Speed:</span> {formatSpeed(plane.velocity)}</div>
-                  <div><span className="font-medium">Heading:</span> {plane.true_track ? Math.round(plane.true_track) + '°' : 'Unknown'}</div>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
+            aircraft={plane}
+            icon={createAircraftIcon(plane.true_track)}
+            onAircraftSelect={onAircraftSelect}
+          />
         ))}
       </MapContainer>
     </div>
