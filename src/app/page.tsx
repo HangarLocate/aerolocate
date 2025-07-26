@@ -6,6 +6,7 @@ import { LatLngBounds } from 'leaflet';
 import Header from '@/components/ui/Header';
 import { useViewportAircraft } from '@/hooks/useViewportAircraft';
 import { Aircraft } from '@/types';
+import { visualCompassTest } from '@/utils/headingTest';
 
 const FlightMap = dynamic(() => import('@/components/map/FlightMap'), {
   ssr: false,
@@ -49,6 +50,11 @@ export default function Home() {
   const handleZoomChange = useCallback((zoomLevel: number) => {
     setZoom(zoomLevel);
   }, []);
+
+  // Expose heading test function to browser console for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).testHeadings = visualCompassTest;
+  }
 
   return (
     <div className="h-screen flex flex-col">

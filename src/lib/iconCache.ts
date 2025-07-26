@@ -84,7 +84,9 @@ class AircraftIconCache {
     }
 
     // Create new icon
-    const rotation = normalizedHeading - 90; // Adjust for icon orientation
+    // OpenSky true_track: 0° = North, SVG default orientation: North (pointing up)
+    // No rotation offset needed as both use North as 0°
+    const rotation = normalizedHeading;
     const icon = this.createIcon(rotation, isSelected);
 
     // Add to cache
@@ -117,10 +119,18 @@ class AircraftIconCache {
 
   clearCache(): void {
     this.cache.clear();
+    console.log('Aircraft icon cache cleared - icons will regenerate with correct headings');
+  }
+
+  // Force refresh of all cached icons (useful after rotation fixes)
+  refreshCache(): void {
+    this.clearCache();
+    this.preWarmCache();
+    console.log('Aircraft icon cache refreshed with updated rotation logic');
   }
 }
 
 export const aircraftIconCache = AircraftIconCache.getInstance();
 
-// Pre-warm the cache on module load
-aircraftIconCache.preWarmCache();
+// Clear any existing cache with incorrect rotations and pre-warm with correct ones
+aircraftIconCache.refreshCache();
