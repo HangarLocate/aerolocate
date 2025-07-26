@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onRefresh, isLoading, lastUpdated }: HeaderProps) {
-  const formatLastUpdated = (date: Date | null) => {
+  const formatLastUpdated = (date: Date | null | undefined) => {
     if (!date) return 'Never';
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
