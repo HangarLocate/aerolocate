@@ -48,7 +48,7 @@ export function useFlightData({
     } finally {
       setLoading(false);
     }
-  }, [bounds]);
+  }, [bounds]); // removed openSky from dependencies as it's a singleton
 
   // Initial fetch
   useEffect(() => {

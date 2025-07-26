@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Icon, LatLngBounds, LatLngTuple } from 'leaflet';
+import { Icon, LatLngTuple } from 'leaflet';
 import { Aircraft } from '@/types';
 
 // Custom aircraft icon
@@ -28,30 +28,15 @@ export default function FlightMap({
   selectedAircraft, 
   onAircraftSelect 
 }: FlightMapProps) {
-  const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
-  
-  // Default center (over North America/Atlantic)
+  // Default center (over North America/Atlantic) 
   const defaultCenter: LatLngTuple = [40.7589, -73.9851];
-  const defaultZoom = 6;
+  const defaultZoom = 4;
 
-  // Filter valid aircraft positions
-  const validAircraft = aircraft.filter(
-    a => a.latitude !== null && a.longitude !== null && !a.on_ground
+  // Filter valid aircraft positions (memoized to prevent infinite re-renders)
+  const validAircraft = useMemo(() => 
+    aircraft.filter(a => a.latitude !== null && a.longitude !== null && !a.on_ground),
+    [aircraft]
   );
-
-  useEffect(() => {
-    if (validAircraft.length > 0) {
-      const lats = validAircraft.map(a => a.latitude!);
-      const lngs = validAircraft.map(a => a.longitude!);
-      
-      const bounds = new LatLngBounds(
-        [Math.min(...lats), Math.min(...lngs)],
-        [Math.max(...lats), Math.max(...lngs)]
-      );
-      
-      setMapBounds(bounds);
-    }
-  }, [validAircraft]);
 
   const formatAltitude = (altitude: number | null) => {
     if (altitude === null) return 'Unknown';
@@ -70,7 +55,6 @@ export default function FlightMap({
         zoom={defaultZoom}
         className="h-full w-full"
         zoomControl={true}
-        bounds={mapBounds || undefined}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
