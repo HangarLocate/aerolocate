@@ -23,6 +23,7 @@ export async function testAircraftHeadings(): Promise<HeadingTestResult[]> {
     console.log('❌ Icon cache not available (running on server-side)');
     return [];
   }
+  
   const testCases = [
     { heading: 0, expectedDirection: 'North (↑)' },
     { heading: 45, expectedDirection: 'Northeast (↗)' },
@@ -40,6 +41,16 @@ export async function testAircraftHeadings(): Promise<HeadingTestResult[]> {
   return testCases.map(test => {
     // Get icon from cache (this will create it with correct rotation)
     const icon = aircraftIconCache.getIcon(test.heading, false);
+    
+    if (!icon || !icon.options || !icon.options.iconUrl) {
+      console.log(`${test.heading}° → ${test.expectedDirection}: No icon generated ❌`);
+      return {
+        heading: test.heading,
+        expectedDirection: test.expectedDirection,
+        iconRotation: 0,
+        correct: false
+      };
+    }
     
     // Extract rotation from the icon's HTML (parse SVG transform)
     const iconHtml = icon.options.iconUrl as string;
@@ -72,7 +83,7 @@ export async function testHeadingsWithFreshCache(): Promise<HeadingTestResult[]>
 
   console.log('🔄 Clearing cache and testing with fresh icons...');
   aircraftIconCache.refreshCache();
-  return testAircraftHeadings();
+  return await testAircraftHeadings();
 }
 
 // Visual compass test for browser console
@@ -84,7 +95,7 @@ export async function visualCompassTest(): Promise<void> {
   console.log('225°↙ ↘135°');
   console.log('  180°↓S   '); 
   
-  const results = testHeadingsWithFreshCache();
+  const results = await testHeadingsWithFreshCache();
   const allCorrect = results.every(r => r.correct);
   
   console.log(`\n📊 Test Summary: ${allCorrect ? '✅ ALL CORRECT' : '❌ ISSUES FOUND'}`);

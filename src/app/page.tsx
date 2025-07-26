@@ -53,7 +53,9 @@ export default function Home() {
 
   // Expose heading test function to browser console for debugging
   if (typeof window !== 'undefined') {
-    (window as any).testHeadings = visualCompassTest;
+    (window as any).testHeadings = () => {
+      visualCompassTest().catch(console.error);
+    };
   }
 
   return (
