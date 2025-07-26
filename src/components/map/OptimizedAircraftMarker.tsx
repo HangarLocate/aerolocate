@@ -100,7 +100,7 @@ const OptimizedAircraftMarker = memo(function OptimizedAircraftMarker({
     return new Date(timestamp * 1000).toLocaleTimeString();
   };
 
-  if (!currentPosition) return null;
+  if (!currentPosition || !icon) return null;
 
   return (
     <Marker

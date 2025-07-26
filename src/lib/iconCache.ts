@@ -1,4 +1,8 @@
-import { Icon } from 'leaflet';
+// Only import leaflet on client-side to avoid SSR issues
+let Icon: any;
+if (typeof window !== 'undefined') {
+  Icon = require('leaflet').Icon;
+}
 
 interface CachedIcon {
   icon: Icon;
@@ -34,7 +38,12 @@ class AircraftIconCache {
     `;
   }
 
-  private createIcon(rotation: number, isSelected: boolean = false): Icon {
+  private createIcon(rotation: number, isSelected: boolean = false): any {
+    if (typeof window === 'undefined' || !Icon) {
+      // Return a placeholder for SSR
+      return null;
+    }
+
     const svg = this.generateSVG(rotation, isSelected);
     const iconSize = isSelected ? [28, 28] : [24, 24];
     const iconAnchor = isSelected ? [14, 14] : [12, 12];
@@ -73,12 +82,17 @@ class AircraftIconCache {
     }
   }
 
-  getIcon(heading: number | null | undefined, isSelected: boolean = false): Icon {
+  getIcon(heading: number | null | undefined, isSelected: boolean = false): any {
+    if (typeof window === 'undefined') {
+      // Return null for SSR, component will handle gracefully
+      return null;
+    }
+
     const normalizedHeading = this.normalizeHeading(heading);
     const cacheKey = `${normalizedHeading}-${isSelected}`;
 
     const cached = this.cache.get(cacheKey);
-    if (cached) {
+    if (cached && cached.icon) {
       cached.lastUsed = Date.now();
       return cached.icon;
     }
@@ -89,18 +103,22 @@ class AircraftIconCache {
     const rotation = normalizedHeading;
     const icon = this.createIcon(rotation, isSelected);
 
-    // Add to cache
-    this.evictLRU();
-    this.cache.set(cacheKey, {
-      icon,
-      lastUsed: Date.now(),
-    });
+    if (icon) {
+      // Add to cache
+      this.evictLRU();
+      this.cache.set(cacheKey, {
+        icon,
+        lastUsed: Date.now(),
+      });
+    }
 
     return icon;
   }
 
   // Pre-warm cache with common headings
   preWarmCache(): void {
+    if (typeof window === 'undefined') return; // Skip on server-side
+
     const commonHeadings = [0, 45, 90, 135, 180, 225, 270, 315]; // 8 cardinal directions
     
     commonHeadings.forEach(heading => {
@@ -124,6 +142,8 @@ class AircraftIconCache {
 
   // Force refresh of all cached icons (useful after rotation fixes)
   refreshCache(): void {
+    if (typeof window === 'undefined') return; // Skip on server-side
+
     this.clearCache();
     this.preWarmCache();
     console.log('Aircraft icon cache refreshed with updated rotation logic');
@@ -132,5 +152,10 @@ class AircraftIconCache {
 
 export const aircraftIconCache = AircraftIconCache.getInstance();
 
-// Clear any existing cache with incorrect rotations and pre-warm with correct ones
-aircraftIconCache.refreshCache();
+// Clear any existing cache with incorrect rotations and pre-warm with correct ones (client-side only)
+if (typeof window !== 'undefined') {
+  // Use setTimeout to ensure DOM is loaded
+  setTimeout(() => {
+    aircraftIconCache.refreshCache();
+  }, 100);
+}

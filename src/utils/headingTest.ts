@@ -1,4 +1,5 @@
-import { aircraftIconCache } from '@/lib/iconCache';
+// Dynamic import to avoid SSR issues
+let aircraftIconCache: any;
 
 // Test utility to verify aircraft icon headings
 export interface HeadingTestResult {
@@ -8,7 +9,20 @@ export interface HeadingTestResult {
   correct: boolean;
 }
 
-export function testAircraftHeadings(): HeadingTestResult[] {
+async function ensureIconCache() {
+  if (!aircraftIconCache && typeof window !== 'undefined') {
+    const { aircraftIconCache: cache } = await import('@/lib/iconCache');
+    aircraftIconCache = cache;
+  }
+}
+
+export async function testAircraftHeadings(): Promise<HeadingTestResult[]> {
+  await ensureIconCache();
+  
+  if (!aircraftIconCache) {
+    console.log('❌ Icon cache not available (running on server-side)');
+    return [];
+  }
   const testCases = [
     { heading: 0, expectedDirection: 'North (↑)' },
     { heading: 45, expectedDirection: 'Northeast (↗)' },
@@ -48,14 +62,21 @@ export function testAircraftHeadings(): HeadingTestResult[] {
 }
 
 // Helper to clear cache and test fresh icons
-export function testHeadingsWithFreshCache(): HeadingTestResult[] {
+export async function testHeadingsWithFreshCache(): Promise<HeadingTestResult[]> {
+  await ensureIconCache();
+  
+  if (!aircraftIconCache) {
+    console.log('❌ Icon cache not available (running on server-side)');
+    return [];
+  }
+
   console.log('🔄 Clearing cache and testing with fresh icons...');
   aircraftIconCache.refreshCache();
   return testAircraftHeadings();
 }
 
 // Visual compass test for browser console
-export function visualCompassTest(): void {
+export async function visualCompassTest(): Promise<void> {
   console.log('🧭 Visual Compass Test:');
   console.log('   0°↑N    ');
   console.log('315°↖ ↗45°');
